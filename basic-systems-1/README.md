@@ -49,4 +49,92 @@ Each system will also have a special display to show the system running in a 2D 
 
 ## Exercise
 
-### Part 1
+For each part of this exercise you will be required to write code for a single system and test it. Answers will be provided in collapsed sections, but should not be checked until **after** you've finished writing the code yourself.
+
+### Elevator
+
+An Elevator system is used to lift items up from the floor to a platform and vice-versa. It is composed of a carriage - the part moving up and down and can carry things; and a shaft - the rail in which the carriage moves. 
+
+<img width="720" height="720" alt="image" src="https://github.com/user-attachments/assets/e3dc261b-554e-46d6-8de3-eaf24e2bda4e" />
+
+The carriage is raised and lowered with the help of a strong rope, connecting the elevator to a motor. As the motor rotates it pulls on the rope to lift the carriage. Rotating in the opposite direction releases the rope which lets gravity lower the carriage. A drum is used to collect the rope pulled around it, to hold it in place.
+
+<img width="499" height="492" alt="image" src="https://github.com/user-attachments/assets/4fc38ae6-9b34-4c63-a6a4-2c91ad1443d5" />
+
+#### Part 1
+
+In this part we will be working on the basic subsystem and some simple commands to learn how to use the Elevator.
+
+The basic operations of the elevator are 
+- _lift_: pull the rope by rotating the motor clockwise, fighting gravity to lift the carriage.
+- _lower_: release the rope by rotating the motor counter-clockwise, letting gravity to pull the carriage downward.
+- _stay-in-place_: pull on the rope just enough to keep the carriage in place.
+
+Start with the _subsystem_. The system uses a single motor _NEO v1.1_ connected to a _SparkMax_ motor controller. Implement the following:
+- add the motor controller and initialize it. remember to set the motor controller to factory default.
+- implement `lift`: rotate the motor at constant speed to lift the elevator. The speed used must be high enough to allow the motor to overcome the gravity and lift the carriage. Finding this out can be done with trial and error.
+- implement `lower`: rotate the motor at constant speed to lower the elevator. Because gravity is the one responsible for actually lowering the elevator, the motor must just be weaker than it. How weak depends on how fast we want the elevator to drop. This can be found out with trial and error.
+- implement `stay`: rotate the motor at constant speed to keep the elevator in place. Because negating gravity is necessary to stay in place, the motor should be operated in just the right speed to stay in place. This can be found out with trial and error.
+
+Add the elevator system to the robot class and initialize it there. Remember to also uncomment the sim code so that the elevator will function.
+
+To perform this _trial and error_ to find the appropriate speeds, you will need to run your methods in _teleop_ to see them running. Each time try a different speed until you find the right speed: select speed, run simulation and start _teleop_, change the speed accordingly.
+
+example
+```java
+    private ElevatorSystem elevatorSystem;
+
+    @Override
+    public void robotInit() {
+        elevatorSystem = new ElevatorSystem();
+    }
+
+    ...
+
+    @Override
+    public void teleopInit() {
+      elevatorSystem.lift();
+    }
+
+    ...
+```
+
+Make sure 
+
+<details>
+    <summary>Click to reveal Answer</summary>
+
+The subsystem should look like this
+```java
+public class ElevatorSystem extends SubsystemBase {
+
+    private static final double LIFT_SPEED = 0.5;
+    private static final double LOWER_SPEED = -0.1;
+    private static final double STAY_SPEED = 0.15;
+
+    private final SparkMax motor;
+    private final ElevatorSim sim;
+
+    public ElevatorSystem() {
+        motor = new SparkMax(RobotMap.ELEVATOR_MOTOR_ID, SparkLowLevel.MotorType.kBrushless);
+        // factory default
+        SparkMaxConfig config = new SparkMaxConfig();
+        motor.configure(config, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+
+        sim = new ElevatorSim(motor);
+    }
+
+    public void lift() {
+        motor.set(LIFT_SPEED);
+    }
+
+    public void lower() {
+        motor.set(LOWER_SPEED);
+    }
+
+    public void stay() {
+        motor.set(STAY_SPEED);
+    }
+}
+```
+</details>
