@@ -69,7 +69,9 @@ To use this in code, you will have to use the `CommandGenericHID` class instead 
 
 For each part of this exercise you will be required to write code for a single system and test it. Answers will be provided in collapsed sections, but should not be checked until **after** you've finished writing the code yourself.
 
-### Elevator
+### Part 1
+
+#### Elevator
 
 An Elevator system is used to lift items up from the floor to a platform and vice-versa. It is composed of a carriage - the part moving up and down and can carry things; and a shaft - the rail in which the carriage moves. 
 
@@ -78,10 +80,6 @@ An Elevator system is used to lift items up from the floor to a platform and vic
 The carriage is raised and lowered with the help of a strong rope, connecting the elevator to a motor. As the motor rotates it pulls on the rope to lift the carriage. Rotating in the opposite direction releases the rope which lets gravity lower the carriage. A drum is used to collect the rope pulled around it, to hold it in place.
 
 <img width="499" height="492" alt="image" src="https://github.com/user-attachments/assets/4fc38ae6-9b34-4c63-a6a4-2c91ad1443d5" />
-
-#### Part 1
-
-In this part we will be working on the basic subsystem and some simple commands to learn how to use the Elevator.
 
 The basic operations of the elevator are 
 - _raise_: pull the rope by rotating the motor clockwise, fighting gravity to lift the carriage.
