@@ -79,6 +79,8 @@ An Elevator system is used to lift items up from the floor to a platform and vic
 
 The carriage is raised and lowered with the help of a strong rope, connecting the elevator to a motor. As the motor rotates it pulls on the rope to lift the carriage. Rotating in the opposite direction releases the rope which lets gravity lower the carriage. A drum is used to collect the rope pulled around it, to hold it in place.
 
+The elevator is operated by a single _NEO v1.1_ motor connected to a _SparkMax_ motor controller.
+
 <img width="499" height="492" alt="image" src="https://github.com/user-attachments/assets/4fc38ae6-9b34-4c63-a6a4-2c91ad1443d5" />
 
 The basic operations of the elevator are 
@@ -88,7 +90,7 @@ The basic operations of the elevator are
 
 ##### Subsystem
 
-Start with the _subsystem_. The system uses a single motor _NEO v1.1_ connected to a _SparkMax_ motor controller. Implement the following:
+Start with the _subsystem_. Implement the following:
 - add the motor controller and initialize it in the constructor. remember to set the motor controller to factory default.
 - implement `raise`: rotate the motor at constant speed to lift the elevator. The speed used must be high enough to allow the motor to overcome the gravity and lift the carriage. Finding this out can be done with trial and error.
   - first implement the function. It just needs to move at a constant speed. Select an arbitrary speed for now.
@@ -421,4 +423,150 @@ The system has two operations:
 
 ##### Subsystem
 
+Start with the _subsystem_. Implement the following:
+- add both motor controllers and initialize them in the constructor. remember to set the motor controllers to factory default.
+- add the two limit switches (`DigitalInput`) and initialize them in the constructor.
+- implement `isFullyOpen`: which queries the _fully open_ limit switch and returns `true` if pressed.
+- implement `isFullyClosed`: which queries the _fully closed_ limit switch and returns `true` if pressed.
+- implement `open`: rotate both motors at constant speed to to open the claw. Choose the speed yourself. You will find out the right directions to open when testing.
+- implement `close`: rotate both motors at constant speed to to close the claw. Choose the speed yourself. You will find out the right directions to close when testing.
+- implement `stop`: stop the motors
+
+Add the claw system to the robot class and initialize it there. Remember to also uncomment the sim code so that the claw will function.
+
+To see that the claws are opening and closing, and check the limit switches values, call `open` and `close` in robot class in _teleop_ and run the simulation. Observe the UI display of the system to see how it reacts.
+
+<details>
+    <summary>Click to reveal Answer</summary>
+
+The subsystem should look like this
+```java
+public class ClasSystem extends SubsystemBase {
+
+    private static final double OPEN_SPEED = -0.3;
+    private static final double CLOSED_SPEED = 0.3;
+
+    private final SparkMax motorLeft;
+    private final SparkMax motorRight;
+    private final DigitalInput openSwitch;
+    private final DigitalInput closedSwitch;
+    private final ClawSim sim;
+
+    public ClasSystem() {
+        motorLeft = new SparkMax(RobotMap.CLAW_LEFT_MOTOR_ID, SparkLowLevel.MotorType.kBrushless);
+        motorRight = new SparkMax(RobotMap.CLAW_RIGHT_MOTOR_ID, SparkLowLevel.MotorType.kBrushless);
+        openSwitch = new DigitalInput(RobotMap.CLAW_OPEN_SWITCH_PORT);
+        closedSwitch = new DigitalInput(RobotMap.CLAW_CLOSED_SWITCH_PORT);
+
+        // factory default
+        SparkMaxConfig config = new SparkMaxConfig();
+        motorLeft.configure(config, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+        config = new SparkMaxConfig();
+        config.inverted(true);
+        motorRight.configure(config, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+
+        sim = new ClawSim(motorLeft, motorRight);
+    }
+
+    public boolean isOpen() {
+        return openSwitch.get();
+    }
+
+    public boolean isClosed() {
+        return closedSwitch.get();
+    }
+
+    public void open() {
+        motorLeft.set(OPEN_SPEED);
+        motorRight.set(OPEN_SPEED);
+    }
+
+    public void close() {
+        motorLeft.set(CLOSED_SPEED);
+        motorRight.set(CLOSED_SPEED);
+    }
+
+    public void stop() {
+        motorLeft.stopMotor();
+        motorRight.stopMotor();
+    }
+}
+```
+</details>
+  
 ##### Commands
+
+With the subsystem ready, we can move to commands now. You will need to create 2 commands:
+- `OpenClaw`: open claw fully. Run the `open` function until the open switch indicates it is open.
+- `Closelaw`: open claw fully. Run the `close` function until the open switch indicates it is open.
+
+Attach both commands to buttons with `onTrue`. Use buttons _3_ (_C_) and _4_ (_V_). Run the simulation and test the commands
+by pressing the appropriate buttons. Watch the UI of the system and see that it fully opens and closes.
+
+
+<details>
+    <summary>Click to reveal Answer</summary>
+
+The commands should look like this
+```java
+public class OpenClaw extends Command {
+
+    private final ClawSystem system;
+
+    public OpenClaw(ClawSystem system) {
+        this.system = system;
+        addRequirements(system);
+    }
+
+    @Override
+    public void initialize() {
+        system.open();
+    }
+
+    @Override
+    public void execute() {
+        
+    }
+
+    @Override
+    public void end(boolean wasInterrupted) {
+        system.stop();
+    }
+
+    @Override
+    public boolean isFinished() {
+        return system.isOpen();
+    }
+}
+
+public class CloseClaw extends Command {
+
+    private final ClawSystem system;
+
+    public CloseClaw(ClawSystem system) {
+        this.system = system;
+        addRequirements(system);
+    }
+
+    @Override
+    public void initialize() {
+        system.close();
+    }
+
+    @Override
+    public void execute() {
+        
+    }
+
+    @Override
+    public void end(boolean wasInterrupted) {
+        system.stop();
+    }
+
+    @Override
+    public boolean isFinished() {
+        return system.isClosed();
+    }
+}
+```
+</details>
