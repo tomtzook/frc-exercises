@@ -47,6 +47,26 @@ Each system will also have a special display to show the system running in a 2D 
 
 <img width="465" height="371" alt="image" src="https://github.com/user-attachments/assets/22bbc432-a544-4cf8-a487-7eea4c68a083" />
 
+### Launch Problems
+
+On windows, you may encounter issues with running the simulation. This is seen with the simulation UI not launching. This may be caused because of the _JDK_ you use, and can be fixed by changing it to the _wpilib_ one. Download the [2026 wpilib suite](https://github.com/wpilibsuite/allwpilib/releases/tag/v2026.2.1) and install it.
+
+Close Intellij and reopen it on the project. 
+
+Go to _File -> Project Structure_ which will open a new window.
+
+<img width="351" height="271" alt="image" src="https://github.com/user-attachments/assets/44d0af21-caca-40e5-a0e0-2154906167fd" />
+
+<img width="834" height="189" alt="image" src="https://github.com/user-attachments/assets/e37231cd-afcb-4e7c-b0ff-876734a00ff1" />
+
+Select _Edit_ next to _SDK_, transferring you to the _SDK_ view.
+
+<img width="570" height="261" alt="image" src="https://github.com/user-attachments/assets/13e7f3f3-a888-4db1-8286-35337b7f946c" />
+
+Press _+_ and _Add JDK From Disk_ to add a new _JDK_ from a folder. Navigate to `C:\Users\Public\wpilib\2026` and select the `jdk` folder. The dialog will close with a new _JDK_. 
+
+Go back to _project_ view and select the new _JDK_ in the _SDK_ dropdown menu. Try running again after that.
+
 ### Joystick
 
 It is possible to use the keyboard like a controller in simulation. Allowing us to use axes and buttons like we have a real xbox controller. Doing so requires dragging a joystick into a joystick slot.
