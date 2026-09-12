@@ -2,15 +2,12 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import frc.robot.subsystems.ElevatorSystem;
 
 public class Robot extends TimedRobot {
 
-    private ElevatorSystem elevatorSystem;
-
     @Override
     public void robotInit() {
-        elevatorSystem = new ElevatorSystem();
+
     }
 
     @Override
@@ -45,7 +42,7 @@ public class Robot extends TimedRobot {
 
     @Override
     public void teleopInit() {
-        elevatorSystem.up();
+
     }
 
     @Override
@@ -60,7 +57,7 @@ public class Robot extends TimedRobot {
 
     @Override
     public void autonomousInit() {
-        elevatorSystem.stay();
+
     }
 
     @Override
