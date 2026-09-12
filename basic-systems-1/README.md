@@ -91,8 +91,17 @@ The basic operations of the elevator are
 Start with the _subsystem_. The system uses a single motor _NEO v1.1_ connected to a _SparkMax_ motor controller. Implement the following:
 - add the motor controller and initialize it in the constructor. remember to set the motor controller to factory default.
 - implement `raise`: rotate the motor at constant speed to lift the elevator. The speed used must be high enough to allow the motor to overcome the gravity and lift the carriage. Finding this out can be done with trial and error.
+  - first implement the function. It just needs to move at a constant speed. Select an arbitrary speed for now.
+  - Now, call it in robot class in _teleop_ (either `teleopInit` or `teleopPeriodic`, choose).
+  - Run the simulation, display the system and switch to _teleop_. Watch the system and decide if the speed is good enough. If yes, move on; otherwise, change the speed and run again.
 - implement `lower`: rotate the motor at constant speed to lower the elevator. Because gravity is the one responsible for actually lowering the elevator, the motor must just be weaker than it. How weak depends on how fast we want the elevator to drop. This can be found out with trial and error.
+  - first implement the function. It just needs to move at a constant speed. Select an arbitrary speed for now.
+  - Now, call it in robot class in _teleop_ (either `teleopInit` or `teleopPeriodic`, choose).
+  - Run the simulation, display the system and switch to _teleop_. Watch the system and decide if the speed is good enough. If yes, move on; otherwise, change the speed and run again.
 - implement `stay`: rotate the motor at constant speed to keep the elevator in place. Because negating gravity is necessary to stay in place, the motor should be operated in just the right speed to stay in place. This can be found out with trial and error.
+  - first implement the function. It just needs to move at a constant speed. Select an arbitrary speed for now.
+  - Now, call it in robot class in _teleop_ (either `teleopInit` or `teleopPeriodic`, choose).
+  - Run the simulation, display the system and switch to _teleop_. Watch the system and decide if the speed is good enough. If yes, move on; otherwise, change the speed and run again.
 - implement `stop`: stop the motor
 
 Add the elevator system to the robot class and initialize it there. Remember to also uncomment the sim code so that the elevator will function.
@@ -112,7 +121,7 @@ example
 
     @Override
     public void teleopInit() {
-      elevatorSystem.lift();
+      elevatorSystem.raise();
     }
 
     ...
@@ -295,9 +304,32 @@ public class Robot extends TimedRobot {
 
 ##### Advanced Commands
 
-Let's try a more complex command now. We want to raise the elevator to a specific position automatically. Since we don't have sensors now, we will be using time to do so. Create command `RaiseElevatorToCenter` which raises the elevator for a specific time length until it reaches the center of the shaft. You will have to use trail and error to find the amount of time necessary for this to work.
+Let's try a more complex commands now. 
 
-Attach the command to button _3_ (_C_) like other commands before to run it.
+We want to raise the elevator to a specific position automatically. Since we don't have sensors now, we will be using time to do so. Create command `RaiseElevatorToCenter` which raises the elevator for a specific time length until it reaches the center of the shaft. You will have to use trail and error to find the amount of time necessary for this to work. Attach the command to button _3_ (_C_) like other commands before to run it.
+
+Another command we would want is to go to the floor of the elevator, allowing it to access items placed on the floor. To do this, we would require a way to indicate that we are placed on the floor. We would though this, by placing a limit switch on the elevator shaft which will be pressed when the carriage is at the bottom. 
+
+The limit switch is already placed and connected to the _SparkMax_. Add code to use the limit switch by querying the _SparkMax_'s reverse hard limit switch. To access this you will first need to configure the spark max to enable the limit switch
+```java
+...
+private final SparkLimitSwitch bottomLimitSwitch;
+
+public ElevatorSystem() {
+    // motor created here
+    ...
+    SparkMaxConfig config = new SparkMaxConfig(); // same config as you declared before when configuring
+    config.limitSwitch.reverseLimitSwitchType(LimitSwitchConfig.Type.kNormallyOpen);
+    config.reverseLimitSwitchTriggerBehavior(LimitSwitchConfig.Behavior.kStopMovingMotor);
+
+    // call configure here
+    ...
+    bottomLimitSwitch = motor.getReverseLimitSwitch();
+}
+```
+You can then query the limit switch to see what it says with `bottomLimitSwitch.isPressed()`.
+
+Create command `LowerElevatorToFloor` where you will lower the elevator until the limit switch is pressed.
 
 <details>
     <summary>Click to reveal Answer</summary>
@@ -330,6 +362,7 @@ public class RaiseElevatorToCenter extends Command {
     @Override
     public void end(boolean wasInterrupted) {
         system.stop();
+        timer.stop();
     }
 
     @Override
@@ -337,5 +370,55 @@ public class RaiseElevatorToCenter extends Command {
         return timer.hasElapsed(TIME_SECONDS);
     }
 }
+
+public class LowerElevatorToFloor extends Command {
+
+    private final ElevatorSystem system;
+
+    public LowerElevatorToFloor(ElevatorSystem system) {
+        this.system = system;
+        addRequirements(system);
+    }
+
+    @Override
+    public void initialize() {
+        system.lower();
+    }
+
+    @Override
+    public void execute() {
+        
+    }
+
+    @Override
+    public void end(boolean wasInterrupted) {
+        system.stop();
+    }
+
+    @Override
+    public boolean isFinished() {
+        return system.isAtBottom(); // queries the limit switch
+    }
+}
 ```
 </details>
+
+#### Claw
+
+A claw (aka gripper) allows the robot to get a hold of game items from the field. This is typically used in conjunction with an arm or elevator so as to move the grabbed item around and place it somewhere else. There are many designs for claws, but they are generally meant to only have two states: open or close; and composed of two sides, each a part of the claw. These can than be moved using motors to open or close it. 
+
+<img width="405" height="302" alt="image" src="https://github.com/user-attachments/assets/0b2aa9ec-e220-4d4a-85a9-c80046b7082c" />
+
+<img width="260" height="215" alt="image" src="https://github.com/user-attachments/assets/f7e6b12a-7f61-4a58-87e3-f0514f93dc5e" />
+
+In our case, this claw is mounted on the carriage of the elevator, thus depending on the position elevator to pick up items.
+
+The claw is operated by a two _NEO v1.1_ motors each connected to a _SparkMax_. Rotating motor left will move the left side of the claw, while rotating the right one will rotate the right side. There are two limit switches placed. The first one indicates when the claw is fully open, while the other indicates the claw is full closed.
+
+The system has two operations:
+- _open_: opens the claw fully
+- _close_: closes the claw fully
+
+##### Subsystem
+
+##### Commands
