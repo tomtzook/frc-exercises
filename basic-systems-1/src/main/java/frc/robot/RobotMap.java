@@ -7,6 +7,19 @@ public class RobotMap {
 
     private RobotMap() {}
 
+    public static final int DRIVE_LEFT1_MOTOR_ID = 11;
+    public static final int DRIVE_LEFT2_MOTOR_ID = 12;
+    public static final int DRIVE_RIGHT1_MOTOR_ID = 13;
+    public static final int DRIVE_RIGHT2_MOTOR_ID = 14;
+    public static final int DRIVE_CENTER_MOTOR_ID = 15;
+    public static final double DRIVE_GEAR_RATIO = 5.71; // 5.71 : 1 (driver/driven)
+    public static final double DRIVE_WHEEL_RADIUS_M = Units.inchesToMeters(3);
+    public static final double ROBOT_WEIGHT_KG = 40;
+    public static final double ROBOT_WIDTH_M = 4.0;
+    public static final double ROBOT_LENGTH_M = 5;
+    public static final double DRIVE_TRACK_WIDTH_M = ROBOT_WIDTH_M;
+    public static final double DRIVE_MOMENT_OF_INERTIA = (Math.pow(ROBOT_LENGTH_M, 3) * ROBOT_WIDTH_M) / 12;
+
     public static final int ELEVATOR_MOTOR_ID = 3;
     public static final int ELEVATOR_BOTTOM_SWITCH_PORT = 1;
     public static final double ELEVATOR_GEAR_RATIO = 8.41;
