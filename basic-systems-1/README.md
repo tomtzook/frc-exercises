@@ -332,25 +332,7 @@ We want to raise the elevator to a specific position automatically. Since we don
 
 Another command we would want is to go to the floor of the elevator, allowing it to access items placed on the floor. To do this, we would require a way to indicate that we are placed on the floor. We would though this, by placing a limit switch on the elevator shaft which will be pressed when the carriage is at the bottom. 
 
-The limit switch is already placed and connected to the _SparkMax_. Add code to use the limit switch by querying the _SparkMax_'s reverse hard limit switch. To access this you will first need to configure the spark max to enable the limit switch
-```java
-...
-private final SparkLimitSwitch bottomLimitSwitch;
-
-public ElevatorSystem() {
-    // motor created here
-    ...
-    SparkMaxConfig config = new SparkMaxConfig(); // same config as you declared before when configuring
-    config.limitSwitch.reverseLimitSwitchType(LimitSwitchConfig.Type.kNormallyOpen);
-    config.reverseLimitSwitchTriggerBehavior(LimitSwitchConfig.Behavior.kStopMovingMotor);
-
-    // call configure here
-    ...
-    bottomLimitSwitch = motor.getReverseLimitSwitch();
-}
-```
-You can then query the limit switch to see what it says with `bottomLimitSwitch.isPressed()`.
-
+The limit switch is already placed and connected to the _RoboRIO_. Add code to use the limit switch by using `DigitalInput`.
 Create command `LowerElevatorToFloor` where you will lower the elevator until the limit switch is pressed.
 
 <details>
