@@ -405,6 +405,50 @@ public class LowerElevatorToFloor extends Command {
     }
 }
 ```
+
+The subsystem should look like this after changes
+```java
+public class ElevatorSystem extends SubsystemBase {
+
+    private static final double RAISE_SPEED = 0.3;
+    private static final double LOWER_SPEED = -0.1;
+    private static final double STAY_SPEED = 0.102453;
+
+    private final SparkMax motor;
+    private final DigitalInput bottomSwitch;
+    private final ElevatorSim sim;
+
+    public ElevatorSystem() {
+        motor = new SparkMax(RobotMap.ELEVATOR_MOTOR_ID, SparkLowLevel.MotorType.kBrushless);
+        bottomSwitch = new DigitalInput(RobotMap.ELEVATOR_BOTTOM_SWITCH_PORT);
+        // factory default
+        SparkMaxConfig config = new SparkMaxConfig();
+        motor.configure(config, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+
+        sim = new ElevatorSim(motor);
+    }
+
+    public boolean isAtBottom() {
+        return bottomSwitch.get(); 
+    }
+
+    public void raise() {
+        motor.set(RAISE_SPEED);
+    }
+
+    public void lower() {
+        motor.set(LOWER_SPEED);
+    }
+
+    public void stay() {
+        motor.set(STAY_SPEED);
+    }
+
+    public void stop() {
+        motor.stopMotor();
+    }
+}
+```
 </details>
 
 #### Claw
