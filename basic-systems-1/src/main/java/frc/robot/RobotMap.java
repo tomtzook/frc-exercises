@@ -8,6 +8,7 @@ public class RobotMap {
     private RobotMap() {}
 
     public static final int ELEVATOR_MOTOR_ID = 3;
+    public static final int ELEVATOR_BOTTOM_SWITCH_PORT = 1;
     public static final double ELEVATOR_GEAR_RATIO = 8.41;
     public static final double ELEVATOR_DRUM_RADIUS_METERS = Units.inchesToMeters(3);
     public static final double ELEVATOR_CARRIAGE_MASS_KG = 3;
