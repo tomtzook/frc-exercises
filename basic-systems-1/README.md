@@ -488,7 +488,7 @@ To see that the claws are opening and closing, and check the limit switches valu
 
 The subsystem should look like this
 ```java
-public class ClasSystem extends SubsystemBase {
+public class ClawSystem extends SubsystemBase {
 
     private static final double OPEN_SPEED = -0.3;
     private static final double CLOSED_SPEED = 0.3;
@@ -499,7 +499,7 @@ public class ClasSystem extends SubsystemBase {
     private final DigitalInput closedSwitch;
     private final ClawSim sim;
 
-    public ClasSystem() {
+    public ClawSystem() {
         motorLeft = new SparkMax(RobotMap.CLAW_LEFT_MOTOR_ID, SparkLowLevel.MotorType.kBrushless);
         motorRight = new SparkMax(RobotMap.CLAW_RIGHT_MOTOR_ID, SparkLowLevel.MotorType.kBrushless);
         openSwitch = new DigitalInput(RobotMap.CLAW_OPEN_SWITCH_PORT);
@@ -661,7 +661,7 @@ public class DriveSystem extends SubsystemBase {
     private final SparkMax motorCenter;
     private final OmniDriveSim sim;
 
-    public ClasSystem() {
+    public DriveSystem() {
         motorLeft1 = new SparkMax(RobotMap.DRIVE_LEFT1_MOTOR_ID, SparkLowLevel.MotorType.kBrushless);
         motorLeft2 = new SparkMax(RobotMap.DRIVE_LEFT2_MOTOR_ID, SparkLowLevel.MotorType.kBrushless);
         motorRight1 = new SparkMax(RobotMap.DRIVE_RIGHT1_MOTOR_ID, SparkLowLevel.MotorType.kBrushless);
@@ -680,14 +680,6 @@ public class DriveSystem extends SubsystemBase {
         motorRight2.configure(config, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
 
         sim = new OmniDriveSim(motorLeft1, motorLeft2, motorRight1, motorRight2, motorCenter);
-    }
-
-    public boolean isOpen() {
-        return openSwitch.get();
-    }
-
-    public boolean isClosed() {
-        return closedSwitch.get();
     }
 
     public void drive(double ySpeed, double xSpeed) {
