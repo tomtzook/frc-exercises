@@ -83,13 +83,14 @@ Drag `Keyboard 0` joystick (16) into slot 0 (`Joystick[0]`). You will see the jo
 
 <img width="168" height="162" alt="image" src="https://github.com/user-attachments/assets/4961c17a-7284-4a2d-8b66-fe4800e44506" />
 
-To use this in code, you will have to use the `CommandGenericHID` class instead of xbox. Axes and buttons here are numbered instead of named. Exercises will ask you to use specific axes/buttons.
+To use this in code, you will have to use the `CommandGenericHID` class instead of xbox. Axes and buttons here are numbered instead of named. Exercises will ask you to use specific axes/buttons. Note that since there are
+only 4 buttons here, we will be reusing them between exercises - thus if an exercise asks to use buttons already in use, just delete the old code. It might even be easier to just remove button code after each system was tested.
 
 ## Exercise
 
-For each part of this exercise you will be required to write code for a single system and test it. Answers will be provided in collapsed sections, but should not be checked until **after** you've finished writing the code yourself.
+For each part of this exercise you will be required to write code for subsystems and commands, and test them in the simulation. Answers will be provided in collapsed sections, but should not be checked until **after** you've finished writing the code yourself.
 
-### Part 1
+### Part 1  
 
 #### Elevator
 
@@ -547,7 +548,7 @@ With the subsystem ready, we can move to commands now. You will need to create 2
 - `Closelaw`: open claw fully. Run the `close` function until the open switch indicates it is open.
 
 Attach both commands to buttons with `onTrue`. Use buttons _3_ (_C_) and _4_ (_V_). Run the simulation and test the commands
-by pressing the appropriate buttons. Watch the UI of the system and see that it fully opens and closes.
+by pressing the appropriate buttons. Watch the UI of the system and see that it fully opens and closes. Once finished, remove the commands from the buttons.
 
 
 <details>
@@ -616,3 +617,246 @@ public class CloseClaw extends Command {
 }
 ```
 </details>
+
+#### Omni Drive
+
+And Omni drive system is a specific type of drive system, using special wheels to allow the robot to move along the X and Y axis smoothly.
+
+<img width="348" height="300" alt="image" src="https://github.com/user-attachments/assets/a8f1d209-a5b1-48cc-a01a-cc4c07ade17e" />
+
+An Omni drive chassis will contain two sets of wheels: for the Y axis motion (forward, backward) and for the X axis motion (left, right). In our case, we have 4 wheels (2 left, 2 right) for Y and 1 wheel (center) for X
+
+<img width="634" height="408" alt="image" src="https://github.com/user-attachments/assets/a98068f2-ffb5-4ebc-9b5e-3c974b93034c" />
+
+Like tank drive, the left and right wheels each move independently, providing forward and backward motion, as well as rotation. Seperate from them is the center wheel allowing right and left motion.
+
+We have 1 motor per wheel, all NEO v1.1 connected to a SparkMax. There are no sensors on the drive.
+
+The basic operations of the drive are:
+- _drive_: drive in a selected direction according to a gamepad
+
+##### Subsystem
+
+Start with the _subsystem_. Implement the following:
+- add the 5 motor controllers (all SparkMax) and initialize them in the constructor. remember to set the motor controllers to factory default.
+- implement `drive`: receives speeds `ySpeed` and `xSpeed` and moves the robot in accordance to them.
+  - `ySpeed` will operate the left and right side wheels, which cause the motion along the y axis - allowing the chassis to move forward and backward
+  - `xSpeed` will operate the center wheel, which cause the motion along the x axis - allowing the chassis to move left and right
+- implement `rotate`: receives speed `speed` and rotates the entire chassis in place using all wheels. Positive should rotate clockwise, while negative should rotate counter-clockwise.
+- implement `stop`: stop the motors
+
+Add the drive system to the robot class and initialize it there. Remember to also uncomment the sim code so that the system will function.
+
+<details>
+    <summary>Click to reveal Answer</summary>
+
+The subsystem should look like this
+```java
+public class DriveSystem extends SubsystemBase {
+
+    private final SparkMax motorLeft1;
+    private final SparkMax motorLeft2;
+    private final SparkMax motorRight1;
+    private final SparkMax motorRight2;
+    private final SparkMax motorCenter;
+    private final OmniDriveSim sim;
+
+    public ClasSystem() {
+        motorLeft1 = new SparkMax(RobotMap.DRIVE_LEFT1_MOTOR_ID, SparkLowLevel.MotorType.kBrushless);
+        motorLeft2 = new SparkMax(RobotMap.DRIVE_LEFT2_MOTOR_ID, SparkLowLevel.MotorType.kBrushless);
+        motorRight1 = new SparkMax(RobotMap.DRIVE_RIGHT1_MOTOR_ID, SparkLowLevel.MotorType.kBrushless);
+        motorRight2 = new SparkMax(RobotMap.DRIVE_RIGHT2_MOTOR_ID, SparkLowLevel.MotorType.kBrushless);
+        motorCenter = new SparkMax(RobotMap.DRIVE_CENTER_MOTOR_ID, SparkLowLevel.MotorType.kBrushless);
+
+        // factory default
+        SparkMaxConfig config = new SparkMaxConfig();
+        motorLeft1.configure(config, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+        motorLeft2.configure(config, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+        motorCenter.configure(config, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+        // inverted
+        config = new SparkMaxConfig();
+        config.inverted(true);
+        motorRight1.configure(config, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+        motorRight2.configure(config, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+
+        sim = new OmniDriveSim(motorLeft1, motorLeft2, motorRight1, motorRight2, motorCenter);
+    }
+
+    public boolean isOpen() {
+        return openSwitch.get();
+    }
+
+    public boolean isClosed() {
+        return closedSwitch.get();
+    }
+
+    public void drive(double ySpeed, double xSpeed) {
+        motorLeft1.set(ySpeed);
+        motorLeft2.set(ySpeed);
+        motorRight1.set(ySpeed);
+        motorRight2.set(ySpeed);
+        motorCenter.set(xSpeed);
+    }
+
+    public void rotate(double speed) {
+        motorLeft1.set(-speed);
+        motorLeft2.set(-speed);
+        motorRight1.set(speed);
+        motorRight2.set(speed);
+        motorCenter.set(speed);
+    }
+
+    public void stop() {
+        motorLeft1.stopMotor();
+        motorLeft2.stopMotor();
+        motorRight1.stopMotor();
+        motorRight2.stopMotor();
+        motorCenter.stopMotor();
+    }
+}
+```
+</details>
+
+##### Commands
+
+To drive this system we need two commands to operate it: 
+- `HidDrive`: drive the system by calling `drive` function based on gamepad values. These will be taken from our fake keyboard controller we created. Use the axes numbered with _0_ for `ySpeed` (_w_ forward, _s_ backward) and _1_ `xSpeed` (_a_ left, _d_ right). Access those values in the command by calling `controller.getRawAxis(int axis)`. This is not so different from right a tank drive command, only using a bit different axes on the gamepad.
+- `HidDriveRotate`: rotate the system in place by calling `rotate` function based on gamepad values. The rotate speed will be taken from the keyboard controller with axis _1_.
+
+`HidDrive` and `HidDriveRotate` are meant to complement eachother. The first can only do linear motion along Y and X, while the other allows rotating in place. As such, we need to allow the driver access to both. `HidDrive` should be the default command of the drive system, as it is the one the driver will use a lot. Set it as such using `driveSystem.setDefaultCommand` in robot class. `HidDriveRotate` will only be activated if the driver specifically requested for it via the controller, attach it with `whileTrue` to button _3_ (_c_). 
+
+Run the simulation now so we could test the system. Open the special view for the drive system. It will display you with a field (last year's game field) with the robot represented as a triangle. Switch to teleop and move around to see the robot
+moving on the field. Remember to check rotate by holding down _C_ and using _D_ and _A_ to rotate, release to return to normal drive.
+
+***PICTURE OF DRIVE FIELD DISPLAY***
+
+<details>
+    <summary>Click to reveal Answer</summary>
+
+The commands should look like this
+```java
+public class HidDrive extends Command {
+
+    private final DriveSystem system;
+    private final CommandGenericHID controller;
+
+    public HidDrive(DriveSystem system, CommandGenericHID controller) {
+        this.system = system;
+        this.controller = controller;
+        addRequirements(system);
+    }
+
+    @Override
+    public void initialize() {
+        
+    }
+
+    @Override
+    public void execute() {
+        system.drive(controller.getRawAxis(0), controller.getRawAxis(1));
+    }
+
+    @Override
+    public void end(boolean wasInterrupted) {
+        system.stop();
+    }
+
+    @Override
+    public boolean isFinished() {
+        return false;
+    }
+}
+
+public class HidDriveRotate extends Command {
+
+    private final DriveSystem system;
+    private final CommandGenericHID controller;
+
+    public HidDriveRotate(DriveSystem system, CommandGenericHID controller) {
+        this.system = system;
+        this.controller = controller;
+        addRequirements(system);
+    }
+
+    @Override
+    public void initialize() {
+        
+    }
+
+    @Override
+    public void execute() {
+        system.rotate(controller.getRawAxis(1));
+    }
+
+    @Override
+    public void end(boolean wasInterrupted) {
+        system.stop();
+    }
+
+    @Override
+    public boolean isFinished() {
+        return false;
+    }
+}
+```
+</details>
+
+#### Combining the Systems
+
+Both the _Elevator_ and _Claw_ are meant to be used together in the end, as they must both work in order to acomplish the task of lifting up and object from the floor and placing it somewhere. For this reason, we will be 
+creating commands that combine there use into a complete set. Generally, the robot operators seek simple usage, involving one or two button presses to actually do something. This is another reason why we would want to combine the systems into one large command. We are going to use _command groups_ for this.
+
+Consider the following action requested by the driver: press a button that will lower the elevator to the floor and pick up and item with the claw. How shall we perform this action? Well, first we would break it into small parts:
+- Lower the elevator to the floor: we have the command `LowerElevatorToFloor`.
+- Open claw for grabbing an item: we have the command `OpenClaw`
+- Driver moves manually to put the item in the claw: allowed by default for the driver via the drive command. Once the elevator is on the floor and the claw is open, we need to allow the driver to navigate in order to successfully grab the game item. For that we will need the driver to tell us when they've grab the item and we can close the claw. This will require us to create a special command `WaitForDriverSignal` which will wait until the driver presses the button _1_ and then finish. Once its finished, we can move on. This command will not operate any system.
+- Close claw to get a hold of the item: we have the command `CloseCaw`.
+
+<details>
+    <summary>Click to see `WaitForDriverSignal`</summary>
+
+The commands should look like this
+```java
+public class WaitForDriverSignal extends Command {
+
+    private final CommandGenericHID controller;
+
+    public WaitForDriverSignal(CommandGenericHID controller) {
+        this.controller = controller;
+    }
+
+    @Override
+    public void initialize() {
+        
+    }
+
+    @Override
+    public void execute() {
+        
+    }
+
+    @Override
+    public void end(boolean wasInterrupted) {
+        
+    }
+
+    @Override
+    public boolean isFinished() {
+        return controller.getButton(1);
+    }
+}
+```
+</details>
+
+What we have here is a sequence of commands to run. For that, we will create a `SequentialCommandGroup`. Such a command group will run all the commands in sequence, one after the other, only moving to the next command when the preceding one has finished. It should look something like this:
+```java
+Command collectFromFloor = new SequentialCommandGroup(
+    new LowerElevatorToFloor(elevatorSystem),
+    new OpenClaw(clawSystem),
+    new WaitForDriverSignal(controller),
+    new CloseCaw(clawSystem),
+)
+```
+
+Attach this command to a button (_0_) and try it out. Remember that you will need to press _1_ (_x_) to confirm closing the claw. Of course you don't have a real game item, but you can just pretend. Make sure to open the views of all the systems, so that you can
+watch their state.
