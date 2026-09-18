@@ -1011,4 +1011,137 @@ Extend the windows and open the _SmartDashboard_ tree to see your values
 
 #### Elevator
 
+When working with an elevator, the state desired for control is the height of the carriage. This, as we know, can be controlled by rotating the motor. But to achieve a closed control loop, we need a sensor to measure the height - the encoder. We can translate motor rotations into height of the elevator. Though how exactly, you will have to find out. Consider how the shaft of the motor is connected to the rest of the system and how it affects the carriage height.
+
+Add the encoder into the subsystem 
+- it is a NEO integrated encoder connected to the SparkMax
+- add the encoder initialization as shown
+- add function `getHeightMeters` which reads the encoder position, calculates the height from it, and returns it
+- add display of the height to the dashboard as shown
+
+<details>
+    <summary>Click to see answers</summary>
+
+
+To calculate the height of the carriage, we can focus on the rope pulling it, since the amount of rope pulled indicates how much the carriage has risen. The rope, as we know, is pulled by the motor to wrap around the drum. Thus we can conclude that the amount of rope pulled equals to the amount of rope which has wrapped around the drum. The amount of rope wrapped is dependent on two things: the amount of rotations made by the drum and the circumference of the drum, allowing us to define that
+
+$$ height = \frac{motorRotations}{gearRatio} * 2 * \pi * drumRadius $$
+
+The subsystem should look like this
+```java
+public class ElevatorSystem extends SubsystemBase {
+
+    private final RelativeEncoder encoder;
+
+    public ElevatorSystem() {
+        ...
+        encoder = motor.getEncoder();
+        ...
+    }
+
+    ...
+
+    
+    public double getHeightMeters() {
+      double rotations = encoder.getPosition();
+      double rotationsAfterGearBox = rotations / RobotMap.ELEVATOR_GEAR_RATIO;
+      double drumCircumference = 2 * Math.PI * RobotMap.ELEVATOR_DRUM_RADIUS_METERS;
+      return rotationsAfterGearBox * drumCircumference;
+    }
+
+    ...
+
+    public void set(double speed) {
+      motor.set(speed);
+    }
+
+    ...
+
+    @Override
+    public void periodic() {
+        SmartDashboard.putNumber("ElevatorHeight", getHeightMeters());
+    }
+}
+```
+</details>
+
+Let us now put this encoder to good use. The most common control for an elevator would be "go to this height". You will thus create the command `ElevatorToHeight`
+- receive a target height to go to in the constructor of the command
+- move the elevator to the targeted height with closed loop control
+- you will have to determine how to make your output calculations. Add `void set(double speed)` to your subsystem to allow setting this output value.
+- the command should end when the height has reached, consider how to determine that. Add `boolean didReachHeight(double targetHeightMeters)` to your subsystem where you will implement this logic. Call this function in `isFinished`
+
+<details>
+    <summary>Click to see answers</summary>
+
+There are several things for us to determine before writing code: how to calculate output, how to determine when we've reached our goal.
+
+As there are many forms of output calculation, we will not discuss them all, but rather focus on one approach: relative power output. In this approach we tune the output in relation to how far we are from our goal. This creates a behavior where the system starts fast, but slows down as it approaches its target position, eventually stopping all together. The core for this calculation is based on the difference between `targetPostion` and `currentPosition`, which provide us with a quantity relative to the remaining distance. What remains, is to scale the exact output according to this relative value, to our wanted output. A good starting point is always starting at maximum speed, and gradually decreasing speed until it reaches 0. The code below will demonstrate how to calculate this.
+
+In regards to determining if the elevator has reached the desired height - there can be something a bit misleading here, as one would assume this is as easy as just checking `targetPosition == currentPosition`, but of course, this is entirely wrong for several reasons
+- `double` equality rarely works, mostly because its enough for there to be a difference of 0.0000001 for the equality to yield `false`. A better approach would use a range check.
+- It is rather naive to expect the elevator to reach the exact height we request. Not because it is not possible, but rather it is a question of algorithm. A simple algorithm could easily lead to a situation where the `targetPosition` is not reached exactly, but with a small error, and correction attempts keep introducing errors, keeping the control loop stuck. Thus it is important to determine the needed accuracy and allow _some_ error when possible.
+- The elevator has momentum. Even if it did reach the desired height, it does not mean that stopping now will keep the elevator at that height, as there is the interval between requesting a stop from the motor controller, and an actual stop. If we also consider the possibility of missing and an output calculation that corrects such misses, the problem compounds. Instead, the best indication for a finish is when the position is correct, but also that a complete stop has been achieved, indicated by the velocity of the system.
+
+The subsystem should look like this
+```java
+public class ElevatorSystem extends SubsystemBase {
+    ...
+
+    
+    public boolean didReachHeight(double targetHeightMeters) {
+        double currentHeightMeters = getHeightMeters();
+        double currentVelocityRpm = encoder.getVelocity();
+        boolean isPositionOkay = MathUtil.isNear(targetHeightMeters, currentHeightMeters, POSITION_MARGIN_METERS);
+        boolean isStableInPosition = Math.abs(currentVelocityRpm) < VELOCITY_MARGIN_RPM;
+    }
+
+    ...
+
+    public void set(double speed) {
+      motor.set(speed);
+    }
+
+    ...
+}
+```
+
+```java
+public class ElevatorToHeight extends Command {
+
+  private final ElevatorSystem system;
+  private final double targetHeightMeters;
+
+  public ElevatorToHeight(ElevatorSystem system, double targetHeightMeters) {
+    this.system = system;
+    this.targetHeightMeters = targetHeightMeters;
+
+    addRequirements(system);
+  }
+
+  @Override
+  public void initialize() {
+
+  }
+
+  @Override
+  public void execute() {
+    double currentHeightMeters = system.getHeightMeters();
+    double output = ... // calculate output based on state and target
+    system.set(output);
+  }
+
+  @Override
+  public void end(boolean wasInterrupted) {
+    system.stop();
+  }
+
+  @Override
+  public boolean isFinished() {
+    return system.didReachHeight(targetHeightMeters);
+  }
+}
+```
+</details>
+
 #### Claw
