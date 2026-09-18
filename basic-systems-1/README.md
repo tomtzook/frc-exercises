@@ -909,4 +909,10 @@ If you are not familiar with encoders, please read further [here](https://github
 
 #### Primer: Closed Loop Control
 
+Controlling a system usually involves operating it in such a way that it performs a specific action, typically getting it to reach a desired "state". There are many ways to do this, but it typically requires
+- A way to affect the system. This is provided by motors for us, which can move the system in some ways. Depending on the system, the motor can affect one or more "states", be it angular or linear position, velocity and so on. We would call this _output_.
+- A goal. We must define a clear goal for what the system must do. We would normally define this by desired "states", like a wanted position for the shaft. We would call this _setpoint_.
 
+Thus the point of control is to make the system reach the wanted goal, as best as possible. One common approach is what we call _Closed Loop Control_.
+
+_Closed Loop Control_, or _Feedback Control_, uses one or more sensors on the system to direct the control. In essence, a sensor is used to monitor the current "state". According to this, the system is driven until the sensor shows the goal state. A common example is an Air Conditioner: The goal here is to reach the requested temperature. The motor is driven to circulate air while monitoring the current temperature. If the temperature is too high, the motor is driven harder to speed up the temperature change. The essence of this operation is using the information about the "state" (temperature) to control the magnitude of the output. 
