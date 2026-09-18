@@ -852,3 +852,61 @@ Command collectFromFloor = new SequentialCommandGroup(
 
 Attach this command to a button (_0_) and try it out. Remember that you will need to press _1_ (_x_) to confirm closing the claw. Of course you don't have a real game item, but you can just pretend. Make sure to open the views of all the systems, so that you can
 watch their state.
+
+### Part 2
+
+In the last part, you've worked to implement a few systems and commands. These were relatively basic, and although one could use such code in competitions, the robot will be severely limited. Let us look at why:
+- Both `LowerElevator` and `RaiseEelevator` require the manual control of the driver - holding the button and releasing to stop. This makes it quite difficult to reach a specific height, e.g. reaching a raised platform on the field would have to be done visually.
+- `RaiseElevatorToCenter` uses time to raise the elevator. This removes the manual work of the driver, but it is actually extremely inaccurate. There are a dozen factors that alter the amount of time necessary to reach the position:
+  - if the elevator is carrying items, it changes the weight of the carriage and does the time required
+  - if the battery is not full, the speed used will be slower
+  - friction in the shaft may delay the motion
+  - and so on
+- `LowerElevatorToFloor` uses a limit switch to detect arrival, which will be accurate. However, the motion is done with fixed speed making it either too slow or too fast. Too slow just takes too much time, which is bad in a game with limited time, while too fast may damage the system when it reaches the floor (hitting the floor at speed).
+- `OpenClaw` and `CloseClaw` rely on limit switches to stop motion. This will work, but their motion is done with a fixed speed, making it relatively slow. Increasing the fixed speed may cause damage when trying to stop (due to momentum).
+
+Hopefully this helps illustrate the shortcoming of the approaches used in part 1. To overcome this, we will create new commands with a different approach in mind.
+
+Introducing sensors into the system can be used to increase accuracy and speed. This is done thanks to knowledge about the state of the system. We will primarily be using encoders, which are already present, integrated into all NEO-series motors. Our use of these encoder will largely involve reading them for information on a system's position, and as a helper to make a more efficient motion algorithm.
+
+#### Primer: Reading Encoder
+
+As mentioned the encoders used are integrated into the NEO motors in the robot. These encoders are connected directly to the _SparkMax_ motor controllers, and their values can be queried from them. The are two steps for adding encoder use into the subsystem.
+- First, configure the encoder in the sparkmax settings (if needed) and get the interface allowing access to its values.
+- Second, add one or more methods to allow commands to access the encoder values by reading from the interface.
+
+The following is an illustration for integrating this into a subsystem
+```java
+public class SubsystemName extends SubsystemBase {
+  private final SparkMax motor;
+  private final RelativeEncoder encoder; // interface for accessing encoder
+
+  public SubsystemName() {
+    motor = new SparkMax(RobotMap.CONNECTION_ID, SparkLowLevel.MotorType.kBrushless);
+
+    SparkMaxConfig config = new SparkMaxConfig();
+    // here you can edit encoder configuration if wanted. We will be discussing this later 
+    motor.configure(config, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+
+    encoder = motor.getEncoder(); // get access to the interface
+  }
+
+  // method to expose information about the encoder, specifically the position. the name includes the measurement unit used.
+  public double getPositionRotations() {
+    return encoder.getPosition(); // access the position from the interface. getPosition returns the position of the shaft in rotations    
+  }
+
+  // method to expose information about the encoder, specifically the velocity. the name includes the measurement unit used.
+  public double getVelocityRpm() {
+    return encoder.getVelocity(); // access the velocity from the interface. getVelocity returns the position of the shaft in rpm    
+  }
+}
+```
+
+Commands can call `getPositionRotations` and `getVelocityRpm` if they need information about the system.
+
+If you are not familiar with encoders, please read further [here](https://github.com/tomtzook/frc-learn-docs/blob/master/devices/encoders.md).
+
+#### Primer: Closed Loop Control
+
+
