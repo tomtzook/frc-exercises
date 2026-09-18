@@ -975,6 +975,40 @@ There is one thing in the example left open: the output calculation. There is no
 
 #### Primer: Display Sensor Info on Glass/SimUI
 
+When working with sensors, it often necessary to observe their values. To do this we will make use of a dashboard. On a real robot, we will be using _Glass_, but in the simulation we can use the Simulation UI (which is built on glass). 
+
+The most straight-forward approach to displaying values is using the `SmartDashboard` api. This allows writing different types of data to the dashboard. 
+- `SmartDashboard.putNumber(name, value)` for numbers
+- `SmartDashboard.putBoolean(name, value)` for booleans
+- `SmartDashboard.putString(name, value)` for strings
+
+The write is single time. To keep the dashboard updated with must continuously write to it with updated values. For that purpose we need a periodic function, which thankfully, all subsystems can have. Any class inheriting `SubsystemBase` may override the function `public void periodic` to run code at 20ms intervals.
+
+Let us look at an example
+```java
+public class SubsystemName extends SubsystemBase {
+  ...
+  private final DigitalInput limitSwitch;
+  ...
+  public boolean isUp() {
+    return limitSwitch.get();
+  }
+  ...
+  @Override
+  public void periodic() {
+    SmartDashboard.putBoolean("SystemIsUp", isUp());
+  }
+}
+```
+
+To find this value we must look at the _NetworkTables_ in the UI
+
+<img width="745" height="180" alt="image" src="https://github.com/user-attachments/assets/fe41b7a6-b64a-4dd2-b270-018241e41d29" />
+
+Extend the windows and open the _SmartDashboard_ tree to see your values
+
+<img width="744" height="253" alt="image" src="https://github.com/user-attachments/assets/c9709855-9196-4010-a991-d459de09f25d" />
+
 #### Elevator
 
 #### Claw
