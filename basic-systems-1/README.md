@@ -916,3 +916,65 @@ Controlling a system usually involves operating it in such a way that it perform
 Thus the point of control is to make the system reach the wanted goal, as best as possible. One common approach is what we call _Closed Loop Control_.
 
 _Closed Loop Control_, or _Feedback Control_, uses one or more sensors on the system to direct the control. In essence, a sensor is used to monitor the current "state". According to this, the system is driven until the sensor shows the goal state. A common example is an Air Conditioner: The goal here is to reach the requested temperature. The motor is driven to circulate air while monitoring the current temperature. If the temperature is too high, the motor is driven harder to speed up the temperature change. The essence of this operation is using the information about the "state" (temperature) to control the magnitude of the output. 
+
+This principle can apply to any system, dependent on having a form of output control and an appropriate sensor. A typical control loop will follow this structure
+```java
+currentState = readSensor();
+while (!reachedGoal(currentState)) {
+  output = calculateOutput(currentState);
+  setOutput(output);
+
+  currentState = readSensor();
+}
+```
+
+When working with commands, this can be translated thus
+```java
+public class CommandName extends Command {
+
+  private final YourSubsystem system;
+  private final double target;
+
+  public CommandName(YourSubsystem system, double target) {
+    this.system = system;
+    this.target = target;
+
+    addRequirements(system);
+  }
+
+  @Override
+  public void initialize() {
+
+  }
+
+  @Override
+  public void execute() {
+    double state = system.getSensorState();
+    double output = ... // calculate output based on state and target
+    system.set(output);
+  }
+
+  @Override
+  public void end(boolean wasInterrupted) {
+    system.stop();
+  }
+
+  @Override
+  public boolean isFinished() {
+    return system.didReachWantedState(this.target);
+  }
+}
+```
+
+You can see that this requires 3 functions from the system
+- `double getSensorState()`: is the method the exposes the sensor value. The implementation of this rests on the kind of sensor you are using and how it works.
+- `boolean didReachWantedState(double target)`: determines whether the system reached the target state based on the current state (the function can query the current sensor information by itself to compare with `target`). The implementation of this depends on when you consider that the system has reached its target goal. 
+- `void set(double speed)`: set output to the motor.
+
+There is one thing in the example left open: the output calculation. There is no one way to calculate the desired output, as it depends on various factors like system dynamics and wanted behavior. There are, of course, common approaches, but here the job of coming up with this is up to you. 
+
+#### Primer: Display Sensor Info on Glass/SimUI
+
+#### Elevator
+
+#### Claw
