@@ -1071,12 +1071,18 @@ Let us now put this encoder to good use. The most common control for an elevator
 - you will have to determine how to make your output calculations. Add `void set(double speed)` to your subsystem to allow setting this output value.
 - the command should end when the height has reached, consider how to determine that. Add `boolean didReachHeight(double targetHeightMeters)` to your subsystem where you will implement this logic. Call this function in `isFinished`
 
+Make sure to test this new commands by attaching it to a button and trying out different target heights. See that each time you are indeed stopped on the wanted height after the command. Also make sure that command actually ends when the target position is reached (you can do this by printing to the dashboard a boolean "isCommandFinished", updating it to `false` in `initialize` and `true` in `end`).
+
 <details>
     <summary>Click to see answers</summary>
 
 There are several things for us to determine before writing code: how to calculate output, how to determine when we've reached our goal.
 
-As there are many forms of output calculation, we will not discuss them all, but rather focus on one approach: relative power output. In this approach we tune the output in relation to how far we are from our goal. This creates a behavior where the system starts fast, but slows down as it approaches its target position, eventually stopping all together. The core for this calculation is based on the difference between `targetPostion` and `currentPosition`, which provide us with a quantity relative to the remaining distance. What remains, is to scale the exact output according to this relative value, to our wanted output. A good starting point is always starting at maximum speed, and gradually decreasing speed until it reaches 0. The code below will demonstrate how to calculate this.
+As there are many forms of output calculation, we will not discuss them all, but rather focus on one approach: relative power output. In this approach we tune the output in relation to how far we are from our goal. This creates a behavior where the system starts fast, but slows down as it approaches its target position, eventually stopping all together. The core for this calculation is based on the difference between `targetPostion` and `currentPosition`, which provide us with a quantity relative to the remaining distance. What remains, is to scale the exact output according to this relative value, to our wanted output. A good starting point is always starting at maximum speed, and gradually decreasing speed until it reaches 0. 
+
+We should also consider how to correct mistakes. If we happen to miss our target position, it will be necessary to move back. Although this should not be a problem with a proper output calculation, it never hurts to add such response.
+
+The code below will demonstrate how to calculate this.
 
 In regards to determining if the elevator has reached the desired height - there can be something a bit misleading here, as one would assume this is as easy as just checking `targetPosition == currentPosition`, but of course, this is entirely wrong for several reasons
 - `double` equality rarely works, mostly because its enough for there to be a difference of 0.0000001 for the equality to yield `false`. A better approach would use a range check.
@@ -1086,6 +1092,13 @@ In regards to determining if the elevator has reached the desired height - there
 The subsystem should look like this
 ```java
 public class ElevatorSystem extends SubsystemBase {
+
+    // the exact values for margin must be selected.
+    // the position margin is the result of requirements of the system - how accurate it must be; And trial and error - how accurate can it be.
+    // the velocity margin is a result of trial an error mostly, picking a value that correctly indicates the system has stopped.
+    public static final double POSITION_MARGIN_METERS = 0.1; // 10 cm
+    public static final double VELOCITY_MARGIN_RPM = 10; // 10 rpm
+
     ...
 
     
@@ -1094,6 +1107,7 @@ public class ElevatorSystem extends SubsystemBase {
         double currentVelocityRpm = encoder.getVelocity();
         boolean isPositionOkay = MathUtil.isNear(targetHeightMeters, currentHeightMeters, POSITION_MARGIN_METERS);
         boolean isStableInPosition = Math.abs(currentVelocityRpm) < VELOCITY_MARGIN_RPM;
+        return isPositionOkay && isStableInPosition;
     }
 
     ...
@@ -1111,6 +1125,7 @@ public class ElevatorToHeight extends Command {
 
   private final ElevatorSystem system;
   private final double targetHeightMeters;
+  private double initialDistanceMeters;
 
   public ElevatorToHeight(ElevatorSystem system, double targetHeightMeters) {
     this.system = system;
@@ -1121,13 +1136,22 @@ public class ElevatorToHeight extends Command {
 
   @Override
   public void initialize() {
-
+    // calculate the initial distance to the target position. We will use this to calculate an output
+    // relative to our initial distance.
+    // use absolute value such that a negative value will not affect the output calculation.
+    double currentHeightMeters = system.getHeightMeters();
+    initialDistanceMeters = Math.abs(targetHeightMeters - currentHeightMeters);
   }
 
   @Override
   public void execute() {
+    // get the current distance to target. If we are below the target, the distance will be positive,
+    // indicating we must move up. If we are above the target, the distance will be negative, indicating we must move down.
     double currentHeightMeters = system.getHeightMeters();
-    double output = ... // calculate output based on state and target
+    double currentDistanceMeters = targetHeightMeters - currentHeightMeters;
+    // dividing current distance by initial distance yields an output that starts at maximum value 1 or -1, and
+    // ends at 0 at target position. If we miss, the current distance's sign will be reversed and causes the output to switch direction.
+    double output = currentDistanceMeters / initialDistanceMeters;
     system.set(output);
   }
 
