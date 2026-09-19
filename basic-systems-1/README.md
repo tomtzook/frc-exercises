@@ -1011,7 +1011,7 @@ Extend the windows and open the _SmartDashboard_ tree to see your values
 
 #### Elevator
 
-When working with an elevator, the state desired for control is the height of the carriage. This, as we know, can be controlled by rotating the motor. But to achieve a closed control loop, we need a sensor to measure the height - the encoder. We can translate motor rotations into height of the elevator. Though how exactly, you will have to find out. Consider how the shaft of the motor is connected to the rest of the system and how it affects the carriage height.
+When working with an elevator, the state desired for control is the height of the carriage. This, as we know, can be controlled by rotating the motor. But to achieve a closed control loop, we need a sensor to measure the height - the encoder. We can translate motor rotations into height of the elevator. Though how exactly, you will have to find out. Consider how the shaft of the motor is connected to the rest of the system and how it affects the carriage height. Remember to consider the gear ratio (in `RobotMap`).
 
 Add the encoder into the subsystem 
 - it is a NEO integrated encoder connected to the SparkMax
@@ -1047,12 +1047,6 @@ public class ElevatorSystem extends SubsystemBase {
       double rotationsAfterGearBox = rotations / RobotMap.ELEVATOR_GEAR_RATIO;
       double drumCircumference = 2 * Math.PI * RobotMap.ELEVATOR_DRUM_RADIUS_METERS;
       return rotationsAfterGearBox * drumCircumference;
-    }
-
-    ...
-
-    public void set(double speed) {
-      motor.set(speed);
     }
 
     ...
@@ -1169,3 +1163,54 @@ public class ElevatorToHeight extends Command {
 </details>
 
 #### Claw
+
+When working with the claw, using the limit switches as indication of when to stop motion is still the right approach for our commands, as it provides an accurate position for stop. However, we can improve the commands by performing the motion far quicker. The encoders on the motors can be used to measure the angle of opening for the claw (based on the shaft rotating it). You will have to do the conversion yourself, remember to consider the gear ratio (in `RobotMap`).
+
+Add encoders into the subsystem, one for each motor
+- these are the NEO integrated encoder connected to the SparkMaxs
+- add the encoders initialization as shown
+- add functions `getLeftAngleDegrees` and `getRightAngleDegrees` which read the encoder positions, converting to degrees and returning the values.
+- add display of the angles to the dashboard as shown
+
+<details>
+    <summary>Click to see answers</summary>
+
+The subsystem should look like this
+```java
+public class ClawSystem extends SubsystemBase {
+
+    private final RelativeEncoder encoderLeft;
+    private final RelativeEncoder encoderRight;
+
+    public ElevatorSystem() {
+        ...
+        encoderLeft = motorLeft.getEncoder();
+        encoderRight = motorRight.getEncoder();
+        ...
+    }
+
+    ...
+
+    
+    public double getLeftAngleDegrees() {
+      double rotations = encoderLeft.getPosition();
+      double rotationsAfterGearBox = rotations / RobotMap.ELEVATOR_GEAR_RATIO;
+      return rotationsAfterGearBox * 360;
+    }
+
+    public double getRightAngleDegrees() {
+      double rotations = encoderRight.getPosition();
+      double rotationsAfterGearBox = rotations / RobotMap.ELEVATOR_GEAR_RATIO;
+      return rotationsAfterGearBox * 360;
+    }
+
+    ...
+
+    @Override
+    public void periodic() {
+        SmartDashboard.putNumber("ClawLeftPosition", getLeftAngleDegrees());
+        SmartDashboard.putNumber("ClawRightPosition", getRightAngleDegrees());
+    }
+}
+```
+</details>
