@@ -1214,3 +1214,6 @@ public class ClawSystem extends SubsystemBase {
 }
 ```
 </details>
+
+You can now augment the commands `OpenClaw` and `CloseClaw`. Edit the motor output to use varying speeds to get a quick and accurate motion, you can take a similar approach as with the elevator if wanted, or take a different approach. Keep the finish condition to be based on the limit switches though, as they are more accurate. You should add `void set(double speed)` to your subsystem to make use of custom speeds from the commands.
+
