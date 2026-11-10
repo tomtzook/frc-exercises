@@ -6,7 +6,7 @@ The bank has several accounts, each account has some information about the perso
 
 In this phase we will implement the basic info and logic for the bank application. See the UML sketch:
 
-![Phase 1 UML](phase1-uml.png)
+<img width="1871" height="591" alt="image" src="https://github.com/user-attachments/assets/b64d1eaf-49e1-4b06-9fe1-e5d4201ff32a" />
 
 `Address` and `Person` are helper classes representing info about the user of the account.
 
