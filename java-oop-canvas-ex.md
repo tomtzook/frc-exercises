@@ -11,7 +11,7 @@ The project will be made up of
 
 We will follow a UML sketch to help us make these classes:
 
-
+<img width="1101" height="749" alt="image" src="https://github.com/user-attachments/assets/d757bccf-5471-4112-a960-8d07e18a6546" />
 
 This sketch indicates the classes we have, their members, constructors and methods of each, and the relationship between the classes.
 
